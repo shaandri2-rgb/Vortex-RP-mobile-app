@@ -2,219 +2,217 @@ package com.vortexrp.mobile;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Build;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.content.ContentValues;
-import android.provider.MediaStore;
 import android.view.Gravity;
 import android.widget.*;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 public class MainActivity extends Activity {
-    private LinearLayout root, content, nav;
-    private final int bg = Color.rgb(10, 8, 17);
-    private final int panel = Color.rgb(24, 19, 34);
-    private final int purple = Color.rgb(181, 55, 255);
-    private int wallpaperIndex = 1;
-    private static final int WALLPAPER_COUNT = 11;
-    private ImageView wallpaperPreview;
-    private TextView wallpaperCounter;
+    private final int bg = Color.rgb(9, 7, 17);
+    private final int panel = Color.rgb(25, 19, 37);
+    private final int purple = Color.rgb(174, 54, 255);
+    private final int red = Color.rgb(255, 48, 89);
+    private LinearLayout content;
+    private EditText serverInput;
+    private TextView selectedGame;
+    private String selectedPackage;
+    private SharedPreferences prefs;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        prefs = getSharedPreferences("vortex_launcher", MODE_PRIVATE);
+        selectedPackage = prefs.getString("game_package", "");
         getWindow().setStatusBarColor(bg);
         getWindow().setNavigationBarColor(bg);
-        root = new LinearLayout(this);
+
+        LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(bg);
         setContentView(root);
 
-        TextView brand = new TextView(this);
-        brand.setText("V O R T E X   R P");
-        brand.setTextColor(Color.WHITE);
-        brand.setTextSize(23);
-        brand.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        brand.setGravity(Gravity.CENTER);
-        brand.setPadding(12, 25, 12, 18);
-        root.addView(brand);
+        TextView header = text("V O R T E X", 27, Color.WHITE, true);
+        header.setGravity(Gravity.CENTER);
+        header.setPadding(12, 26, 12, 4);
+        root.addView(header);
+        TextView sub = text("ROLEPLAY  •  MOBILE LAUNCHER", 11, purple, true);
+        sub.setGravity(Gravity.CENTER);
+        sub.setPadding(0, 0, 0, 18);
+        root.addView(sub);
 
         ScrollView scroll = new ScrollView(this);
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(18, 10, 18, 20);
+        content.setPadding(18, 8, 18, 26);
         scroll.addView(content);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-
-        nav = new LinearLayout(this);
-        nav.setBackgroundColor(panel);
-        nav.setGravity(Gravity.CENTER);
-        root.addView(nav);
-        show("Home");
+        showHome();
     }
 
-    private TextView text(String value, int size, int color, boolean bold) {
+    private TextView text(String s, int size, int color, boolean bold) {
         TextView t = new TextView(this);
-        t.setText(value); t.setTextSize(size); t.setTextColor(color);
+        t.setText(s); t.setTextSize(size); t.setTextColor(color);
         if (bold) t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         return t;
     }
 
-    private GradientDrawable shape(int color) {
+    private GradientDrawable shape(int color, int stroke) {
         GradientDrawable d = new GradientDrawable();
-        d.setColor(color); d.setCornerRadius(22); return d;
+        d.setColor(color); d.setCornerRadius(24);
+        if (stroke != 0) d.setStroke(2, stroke);
+        return d;
     }
 
     private void card(String title, String body) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(18, 16, 18, 16);
-        box.setBackground(shape(panel));
-        TextView h = text(title, 18, Color.WHITE, true);
-        TextView b = text(body, 14, Color.LTGRAY, false);
-        b.setPadding(0, 8, 0, 0);
+        box.setBackground(shape(panel, Color.rgb(67, 39, 91)));
+        TextView h = text(title, 16, Color.WHITE, true);
+        TextView b = text(body, 13, Color.LTGRAY, false);
+        b.setPadding(0, 7, 0, 0);
         box.addView(h); box.addView(b);
         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
-        p.setMargins(0, 0, 0, 14);
+        p.setMargins(0, 0, 0, 13);
         content.addView(box, p);
     }
 
-    private Button makeButton(String label, Runnable action) {
+    private Button button(String label, Runnable action) {
         Button b = new Button(this);
         b.setText(label); b.setTextColor(Color.WHITE);
-        b.setBackground(shape(purple));
+        b.setAllCaps(false);
+        b.setTextSize(15);
+        b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        b.setBackground(shape(purple, 0));
         b.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
+        p.setMargins(0, 6, 0, 8);
+        content.addView(b, p);
         return b;
     }
 
-    private void button(String label, Runnable action) {
-        Button b = makeButton(label, action);
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
-        p.setMargins(0, 8, 0, 8);
-        content.addView(b, p);
-    }
+    private void showHome() {
+        content.removeAllViews();
+        card("WELCOME BACK", "Your roleplay session starts here. Set your game app and server details, then launch your game.");
+        selectedGame = text("", 14, Color.WHITE, true);
+        selectedGame.setPadding(4, 9, 4, 9);
+        content.addView(selectedGame);
+        refreshSelectedGame();
+        button("SELECT INSTALLED GAME", this::chooseGame);
+        button("LAUNCH GAME", this::launchGame);
 
-    private void show(String page) {
-        content.removeAllViews(); nav.removeAllViews();
-        if (page.equals("Home")) {
-            card("WELCOME TO VORTEX RP", "Your next story begins here. Join the community and explore roleplay in San Andreas.");
-            card("SERVER STATUS", "Live server status is not connected yet. Server details can be added when the host address is ready.");
-            button("OPEN WALLPAPER VAULT", () -> show("Gallery"));
-            button("CREATE ACCOUNT / SIGN IN", () -> show("Profile"));
-        } else if (page.equals("Forum")) {
-            card("COMMUNITY FORUM", "Forum posts need a secure online backend before members can publish and sync discussions.");
-        } else if (page.equals("Store")) {
-            card("VORTEX STORE", "VIP packages and in-game products will appear after secure store and payment integration.");
-            card("PAYMENTS DISABLED", "This build does not collect payment details or process purchases.");
-        } else if (page.equals("Gallery")) {
-            showGallery();
-        } else if (page.equals("Discord")) {
-            card("JOIN DISCORD", "The official invite link has not been configured in this build yet.");
-        } else {
-            card("PLAYER PROFILE", "Account creation and sign-in require a secure backend. No passwords are stored in this app.");
-            button("SIGN IN", () -> Toast.makeText(this, "Account service is not connected yet.", Toast.LENGTH_SHORT).show());
-            button("REGISTER", () -> Toast.makeText(this, "Account service is not connected yet.", Toast.LENGTH_SHORT).show());
-        }
-
-        String[] pages = {"Home", "Forum", "Store", "Gallery", "Discord", "Profile"};
-        for (String item : pages) {
-            TextView t = text(item, 11, item.equals(page) ? purple : Color.LTGRAY, true);
-            t.setGravity(Gravity.CENTER);
-            t.setPadding(3, 15, 3, 15);
-            t.setOnClickListener(v -> show(item));
-            nav.addView(t, new LinearLayout.LayoutParams(0, -2, 1));
-        }
-    }
-
-    private void showGallery() {
-        card("VORTEX WALLPAPER VAULT", "11 high-resolution wallpapers are included offline. Browse them and save your favourites to your phone.");
-        wallpaperPreview = new ImageView(this);
-        wallpaperPreview.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        wallpaperPreview.setBackground(shape(panel));
-        int previewHeight = (int)(getResources().getDisplayMetrics().heightPixels * 0.43f);
-        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(-1, previewHeight);
-        imageParams.setMargins(0, 0, 0, 10);
-        content.addView(wallpaperPreview, imageParams);
-
-        wallpaperCounter = text("", 14, Color.LTGRAY, true);
-        wallpaperCounter.setGravity(Gravity.CENTER);
-        content.addView(wallpaperCounter);
-
-        LinearLayout controls = new LinearLayout(this);
-        controls.setOrientation(LinearLayout.HORIZONTAL);
-        Button previous = makeButton("PREVIOUS", () -> changeWallpaper(-1));
-        Button next = makeButton("NEXT", () -> changeWallpaper(1));
-        LinearLayout.LayoutParams half = new LinearLayout.LayoutParams(0, -2, 1);
-        half.setMargins(3, 5, 3, 5);
-        controls.addView(previous, half);
-        controls.addView(next, half);
-        content.addView(controls);
-        button("SAVE WALLPAPER TO PHONE", this::saveWallpaper);
-        displayWallpaper();
-    }
-
-    private void changeWallpaper(int direction) {
-        wallpaperIndex = ((wallpaperIndex - 1 + direction + WALLPAPER_COUNT) % WALLPAPER_COUNT) + 1;
-        displayWallpaper();
-    }
-
-    private String wallpaperPath() {
-        return String.format(java.util.Locale.US, "wallpapers/vortex_%02d.jpg", wallpaperIndex);
-    }
-
-    private void displayWallpaper() {
-        try (InputStream in = getAssets().open(wallpaperPath())) {
-            BitmapFactory.Options bounds = new BitmapFactory.Options();
-            bounds.inJustDecodeBounds = true;
-            BitmapFactory.decodeStream(in, null, bounds);
-            int targetW = Math.min(1500, getResources().getDisplayMetrics().widthPixels);
-            int targetH = 2100;
-            int sample = 1;
-            while (bounds.outWidth / (sample * 2) >= targetW &&
-                   bounds.outHeight / (sample * 2) >= targetH) sample *= 2;
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = sample;
-            options.inPreferredConfig = Bitmap.Config.RGB_565;
-            try (InputStream image = getAssets().open(wallpaperPath())) {
-                Bitmap bitmap = BitmapFactory.decodeStream(image, null, options);
-                wallpaperPreview.setImageBitmap(bitmap);
+        card("SERVER ADDRESS", "Save your VORTEX RP server address here for quick access. The launcher does not pretend to connect unless your game supports a connection link.");
+        serverInput = new EditText(this);
+        serverInput.setSingleLine(true);
+        serverInput.setTextColor(Color.WHITE);
+        serverInput.setHintTextColor(Color.GRAY);
+        serverInput.setHint("Server IP or hostname");
+        serverInput.setText(prefs.getString("server_address", ""));
+        serverInput.setPadding(16, 12, 16, 12);
+        serverInput.setBackground(shape(panel, purple));
+        content.addView(serverInput, new LinearLayout.LayoutParams(-1, -2));
+        button("SAVE SERVER ADDRESS", () -> {
+            String address = serverInput.getText().toString().trim();
+            prefs.edit().putString("server_address", address).apply();
+            Toast.makeText(this, address.isEmpty() ? "Server address cleared" : "Server address saved", Toast.LENGTH_SHORT).show();
+        });
+        button("COPY SERVER ADDRESS", () -> {
+            String address = serverInput.getText().toString().trim();
+            if (address.isEmpty()) {
+                Toast.makeText(this, "Enter a server address first.", Toast.LENGTH_SHORT).show();
+                return;
             }
-            wallpaperCounter.setText("WALLPAPER " + wallpaperIndex + " / " + WALLPAPER_COUNT);
-        } catch (Exception e) {
-            Toast.makeText(this, "Could not load wallpaper.", Toast.LENGTH_SHORT).show();
-        }
+            android.content.ClipboardManager clipboard = (android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("VORTEX RP server", address));
+            Toast.makeText(this, "Server address copied.", Toast.LENGTH_SHORT).show();
+        });
+        card("QUICK LINKS", "Community links can be added once the official VORTEX RP Discord and website addresses are provided.");
+        button("REFRESH INSTALLED APPS", this::chooseGame);
+        TextView footer = text("VORTEX RP  •  UNOFFICIAL GAME LAUNCHER", 10, Color.GRAY, true);
+        footer.setGravity(Gravity.CENTER);
+        footer.setPadding(0, 18, 0, 6);
+        content.addView(footer);
     }
 
-    private void saveWallpaper() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            Toast.makeText(this, "Wallpaper saving requires Android 10 or newer.", Toast.LENGTH_LONG).show();
+    private void refreshSelectedGame() {
+        if (selectedGame == null) return;
+        if (selectedPackage == null || selectedPackage.isEmpty()) {
+            selectedGame.setText("NO GAME SELECTED");
             return;
         }
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, "VORTEX_RP_Wallpaper_" + wallpaperIndex + ".jpg");
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/VORTEX RP");
-        values.put(MediaStore.Images.Media.IS_PENDING, 1);
-        try {
-            android.net.Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-            if (uri == null) throw new Exception("Could not create image entry");
-            try (InputStream in = getAssets().open(wallpaperPath());
-                 OutputStream out = getContentResolver().openOutputStream(uri)) {
-                if (out == null) throw new Exception("Could not open image output");
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
+        Intent launch = getPackageManager().getLaunchIntentForPackage(selectedPackage);
+        if (launch == null) {
+            selectedGame.setText("SELECTED GAME IS NOT INSTALLED");
+            selectedPackage = "";
+            prefs.edit().remove("game_package").apply();
+        } else {
+            CharSequence label = getPackageManager().getApplicationLabel(
+                getPackageManager().getApplicationInfo(selectedPackage, 0));
+            selectedGame.setText("SELECTED GAME  •  " + label);
+        }
+    }
+
+    private void chooseGame() {
+        Intent query = new Intent(Intent.ACTION_MAIN);
+        query.addCategory(Intent.CATEGORY_LAUNCHER);
+        List<ResolveInfo> apps = getPackageManager().queryIntentActivities(query, 0);
+        Collections.sort(apps, new Comparator<ResolveInfo>() {
+            @Override public int compare(ResolveInfo a, ResolveInfo b) {
+                return String.valueOf(a.loadLabel(getPackageManager())).compareToIgnoreCase(
+                    String.valueOf(b.loadLabel(getPackageManager())));
             }
-            ContentValues complete = new ContentValues();
-            complete.put(MediaStore.Images.Media.IS_PENDING, 0);
-            getContentResolver().update(uri, complete, null, null);
-            Toast.makeText(this, "Saved to Pictures / VORTEX RP", Toast.LENGTH_LONG).show();
+        });
+        List<ResolveInfo> filtered = new ArrayList<>();
+        for (ResolveInfo info : apps) {
+            String pkg = info.activityInfo.packageName;
+            if (!pkg.equals(getPackageName())) filtered.add(info);
+        }
+        if (filtered.isEmpty()) {
+            Toast.makeText(this, "No launchable apps found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] labels = new String[filtered.size()];
+        for (int i = 0; i < filtered.size(); i++) {
+            ResolveInfo info = filtered.get(i);
+            labels[i] = info.loadLabel(getPackageManager()) + "  (" + info.activityInfo.packageName + ")";
+        }
+        new AlertDialog.Builder(this)
+            .setTitle("Choose your GTA / SA-MP game")
+            .setItems(labels, (dialog, which) -> {
+                selectedPackage = filtered.get(which).activityInfo.packageName;
+                prefs.edit().putString("game_package", selectedPackage).apply();
+                refreshSelectedGame();
+                Toast.makeText(this, "Game selected.", Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void launchGame() {
+        if (selectedPackage == null || selectedPackage.isEmpty()) {
+            Toast.makeText(this, "Select your installed game first.", Toast.LENGTH_LONG).show();
+            chooseGame();
+            return;
+        }
+        Intent launch = getPackageManager().getLaunchIntentForPackage(selectedPackage);
+        if (launch == null) {
+            Toast.makeText(this, "That game is not installed. Select another app.", Toast.LENGTH_LONG).show();
+            selectedPackage = "";
+            prefs.edit().remove("game_package").apply();
+            refreshSelectedGame();
+            return;
+        }
+        try {
+            startActivity(launch);
         } catch (Exception e) {
-            Toast.makeText(this, "Could not save wallpaper: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Could not open the selected game.", Toast.LENGTH_LONG).show();
         }
     }
 }

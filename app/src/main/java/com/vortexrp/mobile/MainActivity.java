@@ -327,11 +327,26 @@ public class MainActivity extends Activity {
     private void renderCef() {
         page.removeAllViews();
         heading("VORTEX CEF", "IN-GAME WEB INTERFACE MODULE");
-        LinearLayout ready = card("CEF HUD FILES PREPARED",
-                "The VORTEX HTML, CSS and JavaScript interface is in the repository under cef/client-assets. The Pawn sample is under cef/server.");
-        ready.addView(text("●  WEB UI + EVENT HANDLERS", 10, Color.rgb(88, 225, 154), true));
+        LinearLayout ready = card("CEF HUD PREVIEW",
+                "This is the VORTEX web interface preview bundled with the launcher. Its buttons demonstrate the interface; the live game bridge is a separate client integration.");
+        ready.addView(text("●  HTML + CSS + JAVASCRIPT ASSETS", 10, Color.rgb(88, 225, 154), true));
+
+        WebView preview = new WebView(this);
+        preview.setBackgroundColor(Color.TRANSPARENT);
+        preview.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        WebSettings webSettings = preview.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setAllowFileAccess(true);
+        preview.setWebViewClient(new WebViewClient());
+        preview.setWebChromeClient(new WebChromeClient());
+        LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(-1, dp(430));
+        previewParams.setMargins(0, 0, 0, dp(12));
+        page.addView(preview, previewParams);
+        preview.loadUrl("file:///android_asset/cef/index.html");
+
         card("IN-GAME STATUS: NOT INTEGRATED",
-                "A real SA-MP CEF client needs the upstream Java AAR, native C++ library, RakNet packet handling and hooks inside the game client. This launcher cannot add those to a separately installed SA-MP app.");
+                "A real SA-MP CEF client needs the upstream Java AAR, native C++ library, RakNet packet handling and hooks inside the game client. This launcher preview cannot add those to a separately installed SA-MP app.");
         button("OPEN CEF CLIENT INSTRUCTIONS", false, () ->
                 openUrl("https://github.com/shaandri2-rgb/Vortex-RP-mobile-app/tree/main/cef"));
         button("OPEN UPSTREAM CEF DOCUMENTATION", true, () ->

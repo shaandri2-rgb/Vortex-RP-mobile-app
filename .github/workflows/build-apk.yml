@@ -6,11 +6,14 @@ on:
     paths:
       - '**.gradle'
       - 'app/**'
-      - 'cef/**'
       - '.github/workflows/build-apk.yml'
 
 permissions:
   contents: write
+
+concurrency:
+  group: vortex-launcher-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

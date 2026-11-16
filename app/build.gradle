@@ -6,10 +6,7 @@ android {
         applicationId 'com.vortexrp.mobile'
         minSdk 23
         targetSdk 34
-        versionCode 2
-        versionName '1.1'
-    }
-    androidResources {
-        noCompress += ['jpg', 'jpeg']
+        versionCode 3
+        versionName '1.2'
     }
 }

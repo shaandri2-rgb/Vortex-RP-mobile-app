@@ -1,4 +1,4 @@
-name: Build VORTEX RP APK
+name: Build VORTEX RP Launcher APK
 on:
   workflow_dispatch:
   push:
@@ -6,7 +6,6 @@ on:
     paths:
       - '**.gradle'
       - 'app/**'
-      - 'tools/**'
       - '.github/workflows/build-apk.yml'
 jobs:
   build:
@@ -20,13 +19,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install wallpaper generator
-        run: python -m pip install --disable-pip-version-check Pillow
-      - name: Generate offline VORTEX wallpapers
-        run: python tools/generate_wallpapers.py
       - name: Install Android SDK packages
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
@@ -34,20 +26,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.2'
-      - name: Build and verify APK size
-        run: |
-          gradle assembleDebug
-          apk="app/build/outputs/apk/debug/app-debug.apk"
-          size=$(stat -c%s "$apk")
-          echo "APK size: $size bytes"
-          echo "APK size: $(python -c "print(f'{int($size) / 1024 / 1024:.2f} MiB')")"
-          if [ "$size" -lt 31457280 ]; then
-            echo "::error::APK is smaller than 30 MiB."
-            exit 1
-          fi
+      - name: Build launcher APK
+        run: gradle assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: VORTEX-RP-30MB-debug-APK
+          name: VORTEX-RP-Launcher-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          compression-level: 0
           retention-days: 30

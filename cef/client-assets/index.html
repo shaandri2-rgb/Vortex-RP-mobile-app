@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#090711">
+  <title>VORTEX RP HUD</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="hud" aria-label="VORTEX roleplay interface">
+    <header class="top">
+      <div class="brand-mark">V</div>
+      <div class="brand-copy">
+        <div class="brand">VORTEX <span>ROLEPLAY</span></div>
+        <div class="server-line"><i></i> ROLEPLAY NETWORK</div>
+      </div>
+      <div class="live-tag">LIVE</div>
+    </header>
+
+    <section class="player-card">
+      <div class="eyebrow">PLAYER PROFILE</div>
+      <div class="player-name" id="player-name">CONNECTING...</div>
+      <div class="player-sub">SAN ANDREAS • GEORGIA</div>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">CASH</span>
+          <strong id="money">$0</strong>
+        </div>
+        <div class="stat">
+          <span class="stat-label">HEALTH</span>
+          <strong id="health">100%</strong>
+        </div>
+        <div class="stat">
+          <span class="stat-label">ARMOUR</span>
+          <strong id="armour">0%</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="menu-card">
+      <div class="menu-heading">
+        <span>QUICK MENU</span>
+        <span class="menu-hint">TAP TO OPEN</span>
+      </div>
+      <div class="actions">
+        <button type="button" data-action="character"><b>01</b><span>CHARACTER</span><em>›</em></button>
+        <button type="button" data-action="inventory"><b>02</b><span>INVENTORY</span><em>›</em></button>
+        <button type="button" data-action="phone"><b>03</b><span>PHONE</span><em>›</em></button>
+        <button type="button" data-action="close" class="close"><b>×</b><span>CLOSE HUD</span><em>›</em></button>
+      </div>
+    </section>
+
+    <footer>
+      <span>VORTEX RP</span>
+      <span id="bridge-status">WAITING FOR GAME CLIENT</span>
+    </footer>
+    <div class="notice" id="notice" role="status" aria-live="polite"></div>
+  </main>
+  <script src="vortex.js"></script>
+</body>
+</html>

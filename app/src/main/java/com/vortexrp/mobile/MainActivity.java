@@ -154,9 +154,15 @@ public class MainActivity extends Activity {
             selectedPackage = "";
             prefs.edit().remove("game_package").apply();
         } else {
-            CharSequence label = getPackageManager().getApplicationLabel(
-                getPackageManager().getApplicationInfo(selectedPackage, 0));
-            selectedGame.setText("SELECTED GAME  •  " + label);
+            try {
+                CharSequence label = getPackageManager().getApplicationLabel(
+                    getPackageManager().getApplicationInfo(selectedPackage, 0));
+                selectedGame.setText("SELECTED GAME  •  " + label);
+            } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+                selectedGame.setText("SELECTED GAME IS NOT INSTALLED");
+                selectedPackage = "";
+                prefs.edit().remove("game_package").apply();
+            }
         }
     }
 

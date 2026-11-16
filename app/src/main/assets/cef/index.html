@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>VORTEX RP HUD</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="hud">
+    <header class="top">
+      <div class="mark">V</div>
+      <div><div class="brand">VORTEX <span>ROLEPLAY</span></div><small>LOS SANTOS • GEORGIA</small></div>
+      <b class="live">LIVE</b>
+    </header>
+    <section class="profile">
+      <small>PLAYER PROFILE</small>
+      <h1 id="player-name">PLAYER_NAME</h1>
+      <div class="stats">
+        <div><small>CASH</small><b id="money">$12,500</b></div>
+        <div><small>HEALTH</small><b id="health">100%</b></div>
+        <div><small>ARMOUR</small><b id="armour">0%</b></div>
+      </div>
+    </section>
+    <section class="menu">
+      <small>QUICK ACTIONS</small>
+      <button data-action="character">01　 CHARACTER MENU <i>›</i></button>
+      <button data-action="inventory">02　 INVENTORY <i>›</i></button>
+      <button data-action="phone">03　 PHONE <i>›</i></button>
+      <button data-action="close" class="close">×　 CLOSE HUD <i>›</i></button>
+    </section>
+    <footer><span>VORTEX RP</span><span id="state">WEB PREVIEW ONLY</span></footer>
+    <div id="notice"></div>
+  </main>
+  <script src="vortex.js"></script>
+</body>
+</html>

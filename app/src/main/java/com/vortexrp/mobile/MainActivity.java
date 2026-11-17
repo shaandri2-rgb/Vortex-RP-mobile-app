@@ -418,7 +418,7 @@ public class MainActivity extends Activity {
         profileRow.addView(nick);
         profile.addView(profileRow);
         Button editNick = compactButton("EDIT NICKNAME", true, this::showNicknameDialog);
-        LinearLayout nickLp = new LinearLayout.LayoutParams(-1, dp(37));
+        LinearLayout.LayoutParams nickLp = new LinearLayout.LayoutParams(-1, dp(37));
         nickLp.setMargins(0, dp(9), 0, 0);
         profile.addView(editNick, nickLp);
 

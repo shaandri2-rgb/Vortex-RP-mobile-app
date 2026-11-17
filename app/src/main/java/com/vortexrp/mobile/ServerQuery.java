@@ -66,9 +66,16 @@ public final class ServerQuery {
             socket.receive(packet);
             long elapsed = (System.nanoTime() - started) / 1_000_000L;
 
-            if (packet.getLength() < 5) throw new IOException("Server returned an incomplete query response.");
+            // SA-MP query replies repeat the 11-byte SAMP/IP/port/opcode header.
+            if (packet.getLength() < 16) throw new IOException("Server returned an incomplete query response.");
             ByteBuffer data = ByteBuffer.wrap(packet.getData(), packet.getOffset(), packet.getLength())
                     .slice().order(ByteOrder.LITTLE_ENDIAN);
+
+            if (data.get() != 'S' || data.get() != 'A' || data.get() != 'M' || data.get() != 'P') {
+                throw new IOException("Response is not a valid SA-MP server query packet.");
+            }
+            data.position(11); // magic (4), IPv4 (4), port (2), query opcode (1)
+            if (data.remaining() < 5) throw new IOException("Server query response has no player information.");
 
             boolean passworded = (data.get() & 0xff) != 0;
             int players = unsignedShort(data);

@@ -12,7 +12,7 @@ on:
       - '.github/workflows/build-apk.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: vortex-android-build
@@ -63,13 +63,3 @@ jobs:
           path: VORTEX-RP-Android.apk
           if-no-files-found: error
           retention-days: 30
-
-      - name: Publish APK release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: vortex-android-build-${{ github.run_number }}
-          name: VORTEX RP Android build ${{ github.run_number }}
-          files: VORTEX-RP-Android.apk
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

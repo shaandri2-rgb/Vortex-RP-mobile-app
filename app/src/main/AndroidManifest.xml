@@ -1,16 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <queries>
+        <!-- Discover launchable apps without requesting QUERY_ALL_PACKAGES. -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <package android:name="com.rockstargames.gtasa" />
+        <package android:name="com.kurdish.roleplay" />
+        <package android:name="com.sampunity.game" />
+        <package android:name="ru.unisamp_mobile.launcher" />
     </queries>
+
     <application
-        android:theme="@style/AppTheme"
-        android:label="VORTEX RP Launcher"
-        android:allowBackup="false">
-        <activity android:name=".MainActivity" android:exported="true">
+        android:allowBackup="false"
+        android:label="VORTEX RP"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

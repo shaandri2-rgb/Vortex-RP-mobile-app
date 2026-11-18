@@ -203,8 +203,8 @@ public class MainActivity extends Activity {
 
         LinearLayout brand = column();
         brand.setPadding(dp(10), 0, 0, 0);
-        brand.addView(label("VORTEX RP", 17, Color.WHITE, true));
-        brand.addView(label("SAN ANDREAS MULTIPLAYER", 8, MUTED, true));
+        brand.addView(label("TEST LAUNCHER", 17, Color.WHITE, true));
+        brand.addView(label("VORTEX RP • SAN ANDREAS MULTIPLAYER", 8, MUTED, true));
         bar.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
 
         TextView status = label("MOBILE", 9, PURPLE, true);

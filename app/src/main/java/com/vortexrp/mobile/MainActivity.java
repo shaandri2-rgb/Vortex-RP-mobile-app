@@ -1366,7 +1366,7 @@ public class MainActivity extends Activity {
             if (contentType != null && contentType.toLowerCase(Locale.US).contains("text/html"))
                 throw new IllegalStateException(label + " link returned a web page, not a file. Copy the direct download link.");
             String fileName = modFileName(connection, connection.getURL(), extension);
-            File target = new File(getCacheDir(), "mod-" + System.currentTimeMillis() + "-" + fileName);
+            File target = new File(getCacheDir(), "download-" + fileName);
             long total = connection.getContentLengthLong();
             if (total > 512L * 1024L * 1024L)
                 throw new IllegalStateException(label + " file exceeds the 512 MB safety limit.");

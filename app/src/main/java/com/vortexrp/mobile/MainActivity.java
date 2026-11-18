@@ -37,6 +37,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -58,6 +59,7 @@ public class MainActivity extends Activity {
     private static final int GREEN = Color.rgb(74, 220, 143);
     private static final int AMBER = Color.rgb(255, 185, 76);
     private static final int REQUEST_CEF_FOLDER = 1102;
+    private static final int REQUEST_MOD_FOLDER = 1103;
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -1105,10 +1107,44 @@ public class MainActivity extends Activity {
             addValueSetting(chat, "Chat X position", "chat_x", "20");
             addValueSetting(chat, "Chat Y position", "chat_y", "100");
         } else {
-            LinearLayout mods = card("MODIFICATION SUPPORT", "VORTEX CEFS resources are managed separately. Native mod loaders such as AML or Monet require client-side support and are not installed by the launcher.");
-            Button openCefs = compactButton("OPEN CEFS DOWNLOADS", false, () -> showTab("CEFS"));
-            mods.addView(openCefs, new LinearLayout.LayoutParams(-1, dp(38)));
-            card("SAFETY", "Only install mods from trusted sources. This launcher does not download scripts, executables or unknown native libraries.");
+            LinearLayout mods = card("LIBERTYCITY TXD + DFF INSTALLER",
+                    "Paste the direct HTTPS download links for a matching TXD texture and DFF model from LibertyCity. A mod page URL is not a file download link.");
+            EditText txd = edit("Direct .txd download URL", prefs.getString("mod_txd_url", ""),
+                    InputType.TYPE_TEXT_VARIATION_URI);
+            EditText dff = edit("Direct .dff download URL", prefs.getString("mod_dff_url", ""),
+                    InputType.TYPE_TEXT_VARIATION_URI);
+            mods.addView(txd);
+            gap(mods, 7);
+            mods.addView(dff);
+            Button saveLinks = compactButton("SAVE TXD + DFF LINKS", true, () -> {
+                String t = txd.getText().toString().trim();
+                String d = dff.getText().toString().trim();
+                if (!validHttps(t) || !validHttps(d)) {
+                    toast("Enter both direct HTTPS download links.");
+                    return;
+                }
+                prefs.edit().putString("mod_txd_url", t).putString("mod_dff_url", d).apply();
+                toast("Mod download links saved.");
+            });
+            mods.addView(saveLinks, new LinearLayout.LayoutParams(-1, dp(38)));
+
+            LinearLayout destination = card("GAME MOD FOLDER",
+                    "Choose the mod folder that your specific Android GTA / SA-MP client supports. Android 15 does not let this launcher write into another app's private folder.");
+            Uri modTree = parseUri(prefs.getString("mods_tree_uri", ""));
+            destination.addView(label(modTree == null ? "No mod folder selected." :
+                    "A mod folder has been selected on this device.", 9,
+                    modTree == null ? AMBER : GREEN, false));
+            Button chooseMods = compactButton("CHOOSE MOD FOLDER", true, this::chooseModsFolder);
+            destination.addView(chooseMods, new LinearLayout.LayoutParams(-1, dp(38)));
+
+            button("DOWNLOAD + INSTALL TXD AND DFF", false, this::confirmInstallMods);
+            button("OPEN LIBERTYCITY GTA MODS", true,
+                    () -> openUrl("https://www.libertycity.net/files/gta-san-andreas/"));
+
+            card("COMPATIBILITY NOTE",
+                    "The launcher can download and copy TXD/DFF files. Your installed GTA / SA-MP client must support loading mods from the selected folder. Some mobile clients require a specific mod-loader path or do not support external TXD/DFF mods at all.");
+            card("SAFETY",
+                    "Only install files you have permission to use. Backups are created before replacing files when the selected folder provider allows it. The installer does not install APKs, scripts or native libraries.");
         }
         card("ABOUT VORTEX", "VORTEX RP • Android launcher\nNot affiliated with Rockstar Games or Take-Two Interactive.");
     }
@@ -1220,8 +1256,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CEF_FOLDER && resultCode == RESULT_OK &&
-                data != null && data.getData() != null) {
+        if ((requestCode == REQUEST_CEF_FOLDER || requestCode == REQUEST_MOD_FOLDER) &&
+                resultCode == RESULT_OK && data != null && data.getData() != null) {
             Uri uri = data.getData();
             try {
                 int flags = data.getFlags() &
@@ -1231,10 +1267,183 @@ public class MainActivity extends Activity {
                 toast("Could not keep folder permission. Select it again.");
                 return;
             }
-            prefs.edit().putString("cef_tree_uri", uri.toString()).apply();
-            toast("CEFS folder access saved.");
-            renderCefs();
+            if (requestCode == REQUEST_CEF_FOLDER) {
+                prefs.edit().putString("cef_tree_uri", uri.toString()).apply();
+                toast("CEFS folder access saved.");
+                renderCefs();
+            } else {
+                prefs.edit().putString("mods_tree_uri", uri.toString()).apply();
+                toast("Game mod folder access saved.");
+                selectedSettingsTab = "MODS";
+                renderSettings();
+            }
         }
+    }
+
+    private boolean validHttps(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return false;
+        try {
+            URL u = new URL(raw.trim());
+            return "https".equalsIgnoreCase(u.getProtocol());
+        } catch (Exception e) { return false; }
+    }
+
+    private void chooseModsFolder() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION |
+                Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        startActivityForResult(intent, REQUEST_MOD_FOLDER);
+    }
+
+    private void confirmInstallMods() {
+        String txd = prefs.getString("mod_txd_url", "").trim();
+        String dff = prefs.getString("mod_dff_url", "").trim();
+        Uri tree = parseUri(prefs.getString("mods_tree_uri", ""));
+        if (!validHttps(txd) || !validHttps(dff)) {
+            toast("Save both direct HTTPS TXD and DFF download links first.");
+            return;
+        }
+        if (tree == null) {
+            toast("Choose the mod folder supported by your GTA / SA-MP client first.");
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("INSTALL TXD + DFF MOD?")
+                .setMessage("Both files will be downloaded over HTTPS. Existing files with the same names will be backed up where possible before replacement. Continue?")
+                .setNegativeButton("CANCEL", null)
+                .setPositiveButton("DOWNLOAD + INSTALL", (d, w) -> installMods(tree, txd, dff))
+                .show();
+    }
+
+    private String modFileName(HttpURLConnection connection, URL url, String extension) throws Exception {
+        String disposition = connection.getHeaderField("Content-Disposition");
+        String name = null;
+        if (disposition != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("filename\*?=(?:UTF-8''|\\")?([^;\\"]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                    .matcher(disposition);
+            if (m.find()) name = Uri.decode(m.group(1).trim().replace("\\", ""));
+        }
+        if (name == null || name.isEmpty()) {
+            String path = url.getPath();
+            if (path != null) {
+                int slash = path.lastIndexOf('/');
+                name = slash >= 0 ? path.substring(slash + 1) : path;
+            }
+        }
+        if (name == null) throw new IllegalArgumentException("Download did not provide a filename.");
+        name = Uri.decode(name).replaceAll("[^A-Za-z0-9._-]", "_");
+        if (!name.toLowerCase(Locale.US).endsWith(extension))
+            throw new IllegalArgumentException("Expected a " + extension + " file but received: " + name);
+        return name;
+    }
+
+    private File downloadModFile(String link, String extension, String label) throws Exception {
+        URL url = new URL(link);
+        if (!"https".equalsIgnoreCase(url.getProtocol()))
+            throw new IllegalArgumentException("Only HTTPS mod downloads are allowed.");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setInstanceFollowRedirects(true);
+        connection.setConnectTimeout(15000);
+        connection.setReadTimeout(30000);
+        connection.setRequestProperty("User-Agent", "TestLauncher-Android/4.1");
+        try {
+            int code = connection.getResponseCode();
+            if (code < 200 || code >= 300)
+                throw new IllegalStateException(label + " download returned HTTP " + code +
+                        ". Use the direct file link from LibertyCity, not its mod page.");
+            String contentType = connection.getContentType();
+            if (contentType != null && contentType.toLowerCase(Locale.US).contains("text/html"))
+                throw new IllegalStateException(label + " link returned a web page, not a file. Copy the direct download link.");
+            String fileName = modFileName(connection, connection.getURL(), extension);
+            File target = new File(getCacheDir(), "mod-" + System.currentTimeMillis() + "-" + fileName);
+            long total = connection.getContentLengthLong();
+            if (total > 512L * 1024L * 1024L)
+                throw new IllegalStateException(label + " file exceeds the 512 MB safety limit.");
+            long count = 0;
+            try (InputStream in = connection.getInputStream();
+                 OutputStream out = new java.io.FileOutputStream(target)) {
+                byte[] buffer = new byte[16384];
+                int n;
+                while ((n = in.read(buffer)) != -1) {
+                    count += n;
+                    if (count > 512L * 1024L * 1024L)
+                        throw new IllegalStateException(label + " file exceeds the 512 MB safety limit.");
+                    out.write(buffer, 0, n);
+                }
+            }
+            if (count < 16) {
+                target.delete();
+                throw new IllegalStateException(label + " download is empty or invalid.");
+            }
+            return target;
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private void backupAndWriteMod(Uri tree, File source) throws Exception {
+        DocumentFile rootFolder = DocumentFile.fromTreeUri(this, tree);
+        if (rootFolder == null || !rootFolder.canWrite())
+            throw new IllegalStateException("Selected mod folder is not writable.");
+        String fileName = source.getName();
+        DocumentFile existing = rootFolder.findFile(fileName);
+        if (existing != null && existing.isFile()) {
+            DocumentFile backups = rootFolder.findFile("TestLauncherBackups");
+            if (backups == null) backups = rootFolder.createDirectory("TestLauncherBackups");
+            if (backups != null) {
+                String backupName = fileName + "." + System.currentTimeMillis() + ".bak";
+                DocumentFile backup = backups.createFile("application/octet-stream", backupName);
+                if (backup != null) {
+                    try (InputStream in = getContentResolver().openInputStream(existing.getUri());
+                         OutputStream out = getContentResolver().openOutputStream(backup.getUri(), "w")) {
+                        if (in != null && out != null) {
+                            byte[] buffer = new byte[16384];
+                            int n;
+                            while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                        }
+                    }
+                }
+            }
+            existing.delete();
+        }
+        DocumentFile created = rootFolder.createFile("application/octet-stream", fileName);
+        if (created == null) throw new IllegalStateException("Could not create " + fileName + " in the selected folder.");
+        try (InputStream in = new java.io.FileInputStream(source);
+             OutputStream out = getContentResolver().openOutputStream(created.getUri(), "w")) {
+            if (out == null) throw new IllegalStateException("Could not open destination for " + fileName);
+            byte[] buffer = new byte[16384];
+            int n;
+            while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+        }
+    }
+
+    private void installMods(Uri tree, String txdUrl, String dffUrl) {
+        beginTask("Downloading TXD texture file…");
+        io.execute(() -> {
+            File txd = null;
+            File dff = null;
+            try {
+                txd = downloadModFile(txdUrl, ".txd", "TXD");
+                main.post(() -> updateTask(1, 2, "TXD downloaded; downloading DFF…"));
+                dff = downloadModFile(dffUrl, ".dff", "DFF");
+                File finalTxd = txd;
+                File finalDff = dff;
+                main.post(() -> updateTask(2, 2, "Both files downloaded; installing…"));
+                backupAndWriteMod(tree, finalTxd);
+                backupAndWriteMod(tree, finalDff);
+                main.post(() -> finishTask(true, "Installed " + finalTxd.getName() + " and " + finalDff.getName() +
+                        ". Check that your selected client supports this mod folder."));
+            } catch (Exception e) {
+                String message = e.getMessage() == null ? "Unknown download/install error." : e.getMessage();
+                main.post(() -> finishTask(false, "Mod install failed: " + message));
+            } finally {
+                if (txd != null) txd.delete();
+                if (dff != null) dff.delete();
+            }
+        });
     }
 
     private void downloadCefs() {

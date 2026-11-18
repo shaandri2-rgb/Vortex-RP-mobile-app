@@ -79,6 +79,7 @@ public class MainActivity extends Activity {
     private boolean newsLoading = false;
     private boolean queryingServers = false;
     private String selectedSettingsTab = "GENERAL";
+    private String downloadsSubTab = "GAME DATA";
     private final List<ServerEntry> servers = new ArrayList<>();
     private final List<ServerEntry> hostedServers = new ArrayList<>();
     private boolean hostedLoading = false;
@@ -193,53 +194,50 @@ public class MainActivity extends Activity {
     private void buildHeader() {
         LinearLayout bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(dp(16), dp(11), dp(16), dp(11));
+        bar.setPadding(dp(17), dp(10), dp(17), dp(10));
 
-        TextView mark = label("V", 23, Color.WHITE, true);
+        TextView mark = label("V", 24, Color.WHITE, true);
         mark.setGravity(Gravity.CENTER);
-        mark.setBackground(gradient(RED, PURPLE, 12));
-        bar.addView(mark, new LinearLayout.LayoutParams(dp(42), dp(42)));
-        mark.animate().alpha(0.72f).setDuration(1100)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .withEndAction(() -> mark.animate().alpha(1f).setDuration(1100)
-                        .withEndAction(() -> mark.animate().alpha(0.72f).setDuration(1100).start()).start()).start();
+        mark.setBackground(gradient(RED, PURPLE, 11));
+        bar.addView(mark, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         LinearLayout brand = column();
-        brand.setPadding(dp(10), 0, 0, 0);
-        brand.addView(label("TEST LAUNCHER", 17, Color.WHITE, true));
-        brand.addView(label("VORTEX RP • SAN ANDREAS MULTIPLAYER", 8, MUTED, true));
+        brand.setPadding(dp(11), 0, 0, 0);
+        brand.addView(label("VORTEX RP", 16, Color.WHITE, true));
+        brand.addView(label("SAN ANDREAS MULTIPLAYER", 8, MUTED, true));
         bar.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
 
-        TextView status = label("MOBILE", 9, PURPLE, true);
-        status.setPadding(dp(9), dp(6), dp(9), dp(6));
-        status.setBackground(shape(PANEL_2, Color.rgb(90, 57, 126), 8));
+        TextView status = label(lastOnlineText(), 8, lastOnlineColor(), true);
+        status.setSingleLine(true);
+        status.setPadding(dp(9), dp(7), dp(9), dp(7));
+        status.setBackground(shape(PANEL_2, Color.rgb(67, 54, 84), 20));
         bar.addView(status);
         root.addView(bar);
         View line = new View(this);
-        line.setBackgroundColor(Color.rgb(49, 34, 63));
+        line.setBackgroundColor(Color.rgb(43, 35, 55));
         root.addView(line, new LinearLayout.LayoutParams(-1, dp(1)));
     }
 
     private void updateNavigation() {
         bottomBar.removeAllViews();
-        String[] tabs = {"HOME", "SERVERS", "DATA", "CEFS", "SETTINGS"};
-        String[] captions = {"⌂", "▤", "▦", "⬇", "⚙"};
+        String[] tabs = {"HOME", "SERVERS", "DOWNLOADS", "SETTINGS"};
+        String[] captions = {"⌂", "▤", "⇩", "⚙"};
         for (int i = 0; i < tabs.length; i++) {
             String tab = tabs[i];
             boolean active = currentTab.equals(tab);
             LinearLayout item = column();
             item.setGravity(Gravity.CENTER);
-            TextView icon = label(captions[i], 17, active ? Color.WHITE : MUTED, true);
+            TextView icon = label(captions[i], 19, active ? Color.WHITE : MUTED, true);
             icon.setGravity(Gravity.CENTER);
             TextView name = label(tab, 8, active ? Color.WHITE : MUTED, true);
             name.setGravity(Gravity.CENTER);
             item.addView(icon);
             item.addView(name);
             item.setPadding(0, dp(4), 0, dp(4));
-            item.setBackground(shape(active ? PANEL_2 : Color.TRANSPARENT, active ? PURPLE : 0, 10));
+            item.setBackground(shape(active ? PANEL_2 : Color.TRANSPARENT, active ? PURPLE : 0, 9));
             item.setOnClickListener(v -> showTab(tab));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(47), 1);
-            lp.setMargins(dp(3), 0, dp(3), 0);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(48), 1);
+            lp.setMargins(dp(4), 0, dp(4), 0);
             bottomBar.addView(item, lp);
         }
     }
@@ -249,9 +247,10 @@ public class MainActivity extends Activity {
         updateNavigation();
         if ("HOME".equals(tab)) renderHome();
         else if ("SERVERS".equals(tab)) renderServers();
-        else if ("DATA".equals(tab)) renderGameData();
-        else if ("CEFS".equals(tab)) renderCefs();
-        else renderSettings();
+        else if ("DOWNLOADS".equals(tab)) {
+            if ("CEF FILES".equals(downloadsSubTab)) renderCefs();
+            else renderGameData();
+        } else renderSettings();
     }
 
     private void heading(String title, String subtitle) {
@@ -342,120 +341,151 @@ public class MainActivity extends Activity {
 
     private void renderHome() {
         page.removeAllViews();
-
-        LinearLayout hero = column();
-        hero.setPadding(dp(16), dp(17), dp(16), dp(16));
-        hero.setBackground(gradient(Color.rgb(48, 16, 43), Color.rgb(14, 12, 27), 18));
-
-        LinearLayout top = row();
-        TextView eyebrow = label("VORTEX ROLEPLAY", 9, Color.rgb(255, 164, 190), true);
-        top.addView(eyebrow, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView online = label(lastOnlineText(), 9, lastOnlineColor(), true);
-        top.addView(online);
-        hero.addView(top);
-
-        TextView welcome = label("WELCOME BACK,", 9, Color.rgb(195, 175, 208), true);
-        welcome.setPadding(0, dp(22), 0, dp(1));
-        hero.addView(welcome);
-        hero.addView(label(nickname().toUpperCase(Locale.US), 23, Color.WHITE, true));
-        TextView tag = label("GEORGIAN ROLEPLAY COMMUNITY", 8, MUTED, true);
-        tag.setPadding(0, dp(3), 0, dp(13));
-        hero.addView(tag);
-
-        View separator = new View(this);
-        separator.setBackgroundColor(Color.rgb(91, 51, 91));
-        hero.addView(separator, new LinearLayout.LayoutParams(-1, dp(1)));
-
         ServerEntry selected = selectedServer();
-        LinearLayout current = row();
-        TextView serverIcon = label("▣", 19, Color.rgb(109, 201, 255), true);
-        serverIcon.setGravity(Gravity.CENTER);
-        serverIcon.setBackground(shape(Color.rgb(27, 52, 75), 0, 10));
-        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(42), dp(42));
-        iconLp.setMargins(0, dp(12), dp(10), dp(6));
-        current.addView(serverIcon, iconLp);
 
-        LinearLayout info = column();
-        TextView caption = label("CURRENT SERVER", 8, MUTED, true);
-        info.addView(caption);
-        info.addView(label(selected == null ? "Choose your server" : selected.name, 12, Color.WHITE, true));
-        TextView detail = label(selected == null ? "Add VORTEX RP server address" : selected.address(), 9, MUTED, false);
-        detail.setPadding(0, dp(2), 0, 0);
-        info.addView(detail);
-        current.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
+        gap(page, 12);
+        TextView eyebrow = label("WELCOME TO", 10, Color.rgb(191, 166, 210), true);
+        eyebrow.setGravity(Gravity.CENTER);
+        page.addView(eyebrow);
+
+        TextView title = label("VORTEX RP", 35, Color.WHITE, true);
+        title.setGravity(Gravity.CENTER);
+        title.setLetterSpacing(0.08f);
+        title.setPadding(0, dp(3), 0, 0);
+        page.addView(title);
+
+        TextView subtitle = label("GEORGIAN ROLEPLAY COMMUNITY", 9, Color.rgb(187, 174, 202), true);
+        subtitle.setGravity(Gravity.CENTER);
+        subtitle.setPadding(0, dp(3), 0, dp(16));
+        page.addView(subtitle);
+
+        View accent = new View(this);
+        accent.setBackground(gradient(RED, PURPLE, 4));
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(dp(76), dp(3));
+        accentLp.gravity = Gravity.CENTER;
+        accentLp.setMargins(0, 0, 0, dp(23));
+        page.addView(accent, accentLp);
+
+        LinearLayout serverPanel = column();
+        serverPanel.setPadding(dp(15), dp(13), dp(15), dp(13));
+        serverPanel.setBackground(gradient(Color.rgb(33, 23, 48), Color.rgb(17, 16, 28), 13));
+        LinearLayout serverTop = row();
+        TextView serverCaption = label("SELECTED SERVER", 8, MUTED, true);
+        serverTop.addView(serverCaption, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView serverStatus = label(lastOnlineText(), 8, lastOnlineColor(), true);
+        serverTop.addView(serverStatus);
+        serverPanel.addView(serverTop);
+
+        LinearLayout serverMain = row();
+        TextView serverIcon = label("▣", 21, Color.rgb(117, 194, 255), true);
+        serverIcon.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(43), dp(43));
+        iconLp.setMargins(0, dp(10), dp(11), 0);
+        serverMain.addView(serverIcon, iconLp);
+
+        LinearLayout serverInfo = column();
+        serverInfo.setGravity(Gravity.CENTER_VERTICAL);
+        serverInfo.addView(label(selected == null ? "No server selected" : selected.name, 13, Color.WHITE, true));
+        serverInfo.addView(label(selected == null ? "Add the VORTEX RP address" : selected.address(), 9, MUTED, false));
+        serverMain.addView(serverInfo, new LinearLayout.LayoutParams(0, dp(47), 1));
 
         LinearLayout count = column();
-        count.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        count.setGravity(Gravity.CENTER);
         count.addView(label(selected == null || selected.info == null ? "—/—" :
-                selected.info.players + "/" + selected.info.maxPlayers, 12, Color.WHITE, true));
+                selected.info.players + "/" + selected.info.maxPlayers, 13, Color.WHITE, true));
         count.addView(label("PLAYERS", 7, MUTED, true));
-        current.addView(count);
-        hero.addView(current);
+        serverMain.addView(count);
+        serverPanel.addView(serverMain);
+
+        LinearLayout.LayoutParams serverLp = new LinearLayout.LayoutParams(-1, -2);
+        serverLp.setMargins(0, 0, 0, dp(15));
+        page.addView(serverPanel, serverLp);
 
         Button play = new Button(this);
-        play.setText("▶   PLAY ONLINE");
+        play.setText("▶     PLAY");
         play.setAllCaps(false);
-        play.setTextSize(14);
+        play.setTextSize(17);
         play.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         play.setTextColor(Color.WHITE);
-        play.setBackground(gradient(Color.rgb(220, 45, 75), Color.rgb(132, 45, 191), 10));
+        play.setElevation(dp(5));
+        play.setBackground(gradient(Color.rgb(235, 49, 77), Color.rgb(139, 48, 194), 13));
         play.setOnClickListener(v -> {
-            if (selected == null) {
+            ServerEntry current = selectedServer();
+            if (current == null) {
                 showTab("SERVERS");
-                toast("Add or select your VORTEX server first.");
+                toast("Add or select the VORTEX RP server first.");
             } else {
-                showConnectDialog(selected);
+                showConnectDialog(current);
             }
         });
-        LinearLayout.LayoutParams playLp = new LinearLayout.LayoutParams(-1, dp(54));
-        playLp.setMargins(0, dp(13), 0, 0);
-        hero.addView(play, playLp);
+        LinearLayout.LayoutParams playLp = new LinearLayout.LayoutParams(-1, dp(62));
+        playLp.setMargins(0, 0, 0, dp(8));
+        page.addView(play, playLp);
 
-        LinearLayout.LayoutParams heroLp = new LinearLayout.LayoutParams(-1, -2);
-        heroLp.setMargins(0, 0, 0, dp(12));
-        page.addView(hero, heroLp);
+        Button serverBrowser = new Button(this);
+        serverBrowser.setText("SERVER BROWSER");
+        serverBrowser.setAllCaps(false);
+        serverBrowser.setTextSize(11);
+        serverBrowser.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        serverBrowser.setTextColor(Color.rgb(223, 215, 236));
+        serverBrowser.setBackground(shape(Color.rgb(28, 26, 39), Color.rgb(71, 59, 88), 11));
+        serverBrowser.setOnClickListener(v -> showTab("SERVERS"));
+        LinearLayout.LayoutParams browserLp = new LinearLayout.LayoutParams(-1, dp(44));
+        browserLp.setMargins(0, 0, 0, dp(22));
+        page.addView(serverBrowser, browserLp);
 
-        LinearLayout profile = card("PLAYER PROFILE", "");
-        LinearLayout profileRow = row();
-        profileRow.addView(label("NICKNAME", 9, MUTED, true), new LinearLayout.LayoutParams(0, -2, 1));
-        TextView nick = label(nickname(), 11, Color.WHITE, true);
-        profileRow.addView(nick);
-        profile.addView(profileRow);
-        Button editNick = compactButton("EDIT NICKNAME", true, this::showNicknameDialog);
-        LinearLayout.LayoutParams nickLp = new LinearLayout.LayoutParams(-1, dp(37));
-        nickLp.setMargins(0, dp(9), 0, 0);
-        profile.addView(editNick, nickLp);
+        LinearLayout playerLine = row();
+        playerLine.setPadding(dp(2), dp(5), dp(2), dp(5));
+        TextView playerLabel = label("PLAYER", 9, MUTED, true);
+        playerLine.addView(playerLabel, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView playerName = label(nickname(), 11, Color.WHITE, true);
+        playerLine.addView(playerName);
+        Button edit = compactButton("EDIT", true, this::showNicknameDialog);
+        LinearLayout.LayoutParams editLp = new LinearLayout.LayoutParams(dp(67), dp(33));
+        editLp.setMargins(dp(9), 0, 0, 0);
+        playerLine.addView(edit, editLp);
+        page.addView(playerLine);
 
-        LinearLayout quick = card("QUICK ACCESS", "");
-        LinearLayout quickRow = row();
-        String[] quickNames = {"SERVER LIST", "CEFS / MODS", "SETTINGS"};
-        String[] quickTabs = {"SERVERS", "CEFS", "SETTINGS"};
-        for (int i = 0; i < quickNames.length; i++) {
-            final String tab = quickTabs[i];
-            Button b = compactButton(quickNames[i], true, () -> showTab(tab));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(39), 1);
-            lp.setMargins(dp(3), dp(5), dp(3), 0);
-            quickRow.addView(b, lp);
-        }
-        quick.addView(quickRow);
+        View divider = new View(this);
+        divider.setBackgroundColor(Color.rgb(49, 42, 61));
+        LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(-1, dp(1));
+        dividerLp.setMargins(0, dp(7), 0, dp(11));
+        page.addView(divider, dividerLp);
 
-        LinearLayout news = card("VORTEX NEWS", "");
-        if (newsItems.length() == 0) {
-            news.addView(label("No announcements loaded. Add a trusted HTTPS news feed in Settings.", 10, MUTED, false));
-        } else {
-            for (int i = 0; i < Math.min(3, newsItems.length()); i++) {
-                JSONObject item = newsItems.optJSONObject(i);
-                if (item == null) continue;
-                TextView title = label(item.optString("title", "VORTEX update"), 11, Color.WHITE, true);
-                title.setPadding(0, dp(7), 0, 0);
-                news.addView(title);
-                news.addView(label(item.optString("body", item.optString("description", "")), 9, MUTED, false));
+        boolean resourcesReady = GameResourcesManager.hasInstalledData(this);
+        LinearLayout statusLine = row();
+        TextView resources = label(resourcesReady ? "● GAME DATA INSTALLED" : "● GAME DATA NOT INSTALLED",
+                8, resourcesReady ? GREEN : AMBER, true);
+        statusLine.addView(resources, new LinearLayout.LayoutParams(0, -2, 1));
+        Button install = compactButton("INSTALL", true, () -> showTab("DOWNLOADS"));
+        LinearLayout.LayoutParams installLp = new LinearLayout.LayoutParams(dp(82), dp(33));
+        statusLine.addView(install, installLp);
+        page.addView(statusLine);
+
+        if (newsItems.length() > 0) {
+            gap(page, 18);
+            TextView newsHeading = label("LATEST VORTEX NEWS", 9, MUTED, true);
+            page.addView(newsHeading);
+            JSONObject first = newsItems.optJSONObject(0);
+            if (first != null) {
+                TextView newsTitle = label(first.optString("title", "VORTEX update"), 11, Color.WHITE, true);
+                newsTitle.setPadding(0, dp(7), 0, dp(2));
+                page.addView(newsTitle);
+                TextView newsBody = label(first.optString("body", first.optString("description", "")),
+                        9, MUTED, false);
+                page.addView(newsBody);
             }
         }
-        Button refresh = compactButton("REFRESH ANNOUNCEMENTS", true, () -> loadNews(true));
-        news.addView(refresh, new LinearLayout.LayoutParams(-1, dp(36)));
 
-        card("CLIENT STATUS", "The launcher opens the real installed multiplayer client selected in Settings. It does not replace the game or fake a connected session.");
+        gap(page, 16);
+        TextView refresh = label("↻  REFRESH SERVER STATUS", 9, Color.rgb(168, 143, 190), true);
+        refresh.setGravity(Gravity.CENTER);
+        refresh.setPadding(0, dp(7), 0, dp(7));
+        refresh.setOnClickListener(v -> {
+            refreshServers(true);
+            loadNews(true);
+        });
+        page.addView(refresh);
     }
 
     private int lastOnlineColor() {
@@ -954,6 +984,7 @@ public class MainActivity extends Activity {
     private void renderGameData() {
         page.removeAllViews();
         heading("GAME RESOURCES", "INSTALL LITE OR FULL GTA: SAN ANDREAS DATA");
+        addDownloadsSubNavigation();
 
         File installedDir = GameResourcesManager.getInstallDirectory(this);
         boolean ready = GameResourcesManager.hasInstalledData(this);
@@ -1120,9 +1151,26 @@ public class MainActivity extends Activity {
                 }).show();
     }
 
+    private void addDownloadsSubNavigation() {
+        LinearLayout tabs = row();
+        String[] choices = {"GAME DATA", "CEF FILES"};
+        for (String choice : choices) {
+            Button tab = compactButton(choice, !downloadsSubTab.equals(choice), () -> {
+                downloadsSubTab = choice;
+                if ("CEF FILES".equals(choice)) renderCefs();
+                else renderGameData();
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(36), 1);
+            lp.setMargins(0, 0, dp(5), dp(12));
+            tabs.addView(tab, lp);
+        }
+        page.addView(tabs);
+    }
+
     private void renderCefs() {
         page.removeAllViews();
         heading("DOWNLOADS & CEFS", "VORTEX GAME RESOURCES AND CLIENT ADD-ONS");
+        addDownloadsSubNavigation();
 
         LinearLayout source = card("TRUSTED CEFS PACKAGE SOURCE",
                 "Set an HTTPS ZIP location and the SHA-256 checksum given by the VORTEX administrator.");
@@ -1708,7 +1756,7 @@ public class MainActivity extends Activity {
         taskBusy = true;
         taskMessage = message;
         taskPercent = 0;
-        if (!"CEFS".equals(currentTab) && !"DATA".equals(currentTab)) showTab("CEFS");
+        if (!"DOWNLOADS".equals(currentTab)) showTab("DOWNLOADS");
         if (taskStatus != null) taskStatus.setText(taskMessage);
         if (taskProgress != null) {
             taskProgress.setIndeterminate(true);
@@ -1731,8 +1779,10 @@ public class MainActivity extends Activity {
         taskMessage = message == null ? (success ? "Complete." : "Failed.") : message;
         taskPercent = success ? 100 : 0;
         toast(taskMessage);
-        if ("CEFS".equals(currentTab)) renderCefs();
-        else if ("DATA".equals(currentTab)) renderGameData();
+        if ("DOWNLOADS".equals(currentTab)) {
+            if ("CEF FILES".equals(downloadsSubTab)) renderCefs();
+            else renderGameData();
+        }
     }
 
     private Uri parseUri(String raw) {

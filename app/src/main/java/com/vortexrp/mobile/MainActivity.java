@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
     private static final int AMBER = Color.rgb(255, 185, 76);
     private static final int REQUEST_CEF_FOLDER = 1102;
     private static final int REQUEST_MOD_FOLDER = 1103;
+    private static final int REQUEST_GAME_ZIP = 1104;
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -221,8 +222,8 @@ public class MainActivity extends Activity {
 
     private void updateNavigation() {
         bottomBar.removeAllViews();
-        String[] tabs = {"HOME", "SERVERS", "CEFS", "SETTINGS"};
-        String[] captions = {"⌂", "▤", "⬇", "⚙"};
+        String[] tabs = {"HOME", "SERVERS", "DATA", "CEFS", "SETTINGS"};
+        String[] captions = {"⌂", "▤", "▦", "⬇", "⚙"};
         for (int i = 0; i < tabs.length; i++) {
             String tab = tabs[i];
             boolean active = currentTab.equals(tab);
@@ -248,6 +249,7 @@ public class MainActivity extends Activity {
         updateNavigation();
         if ("HOME".equals(tab)) renderHome();
         else if ("SERVERS".equals(tab)) renderServers();
+        else if ("DATA".equals(tab)) renderGameData();
         else if ("CEFS".equals(tab)) renderCefs();
         else renderSettings();
     }
@@ -948,6 +950,176 @@ public class MainActivity extends Activity {
         }
     }
 
+
+    private void renderGameData() {
+        page.removeAllViews();
+        heading("GAME RESOURCES", "INSTALL LITE OR FULL GTA: SAN ANDREAS DATA");
+
+        File installedDir = GameResourcesManager.getInstallDirectory(this);
+        boolean ready = GameResourcesManager.hasInstalledData(this);
+        LinearLayout status = card("LOCAL GAME DATA", ready
+                ? "Game resources are installed in Test launcher storage."
+                : "No game-data package is installed yet. Import a ZIP/OBB you own or configure a trusted HTTPS package source.");
+        status.addView(label(ready
+                ? "● INSTALLED • " + GameResourcesManager.getInstalledFileCount(this) + " files • " + formatBytes(GameResourcesManager.getInstalledSize(this))
+                : "● NOT INSTALLED", 10, ready ? GREEN : AMBER, true));
+        TextView path = label("Launcher storage: " + installedDir.getAbsolutePath(), 8, MUTED, false);
+        path.setTextIsSelectable(true);
+        path.setPadding(0, dp(7), 0, 0);
+        status.addView(path);
+
+        LinearLayout local = card("INSTALL FROM YOUR PHONE", "Select a ZIP or OBB made from your own legally obtained GTA: San Andreas data. The archive is extracted into this app's private game-data folder.");
+        button("SELECT LOCAL GAME DATA ZIP / OBB", false, this::chooseLocalGameZip);
+        card("REMOTE PACKAGES", "For downloads, use a direct HTTPS archive link and its SHA-256 checksum from a trusted source. Lite and Full are separate packages; this launcher does not host copyrighted GTA files.");
+        addRemoteGamePackageCard("LITE RESOURCE PACK", "game_lite_url", "game_lite_sha256",
+                "A smaller resource archive, when supplied by your own trusted host.");
+        addRemoteGamePackageCard("FULL RESOURCE PACK", "game_full_url", "game_full_sha256",
+                "A complete resource archive, when supplied by your own trusted host.");
+
+        LinearLayout rollback = card("ROLLBACK", GameResourcesManager.hasBackup(this)
+                ? "A previous game-data installation is available."
+                : "No previous installation backup is available.");
+        Button restore = compactButton("RESTORE PREVIOUS GAME DATA", true, this::confirmRestoreGameData);
+        restore.setEnabled(GameResourcesManager.hasBackup(this));
+        rollback.addView(restore, new LinearLayout.LayoutParams(-1, dp(38)));
+
+        LinearLayout progress = card("INSTALLATION PROGRESS", "");
+        taskStatus = label(taskMessage, 9, MUTED, false);
+        progress.addView(taskStatus);
+        taskProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        taskProgress.setMax(100);
+        taskProgress.setIndeterminate(taskBusy);
+        taskProgress.setProgress(taskPercent);
+        progress.addView(taskProgress, new LinearLayout.LayoutParams(-1, dp(7)));
+
+        card("IMPORTANT", "This installs data files inside Test launcher storage. The Th1nk SA-MP Android client still needs its own compatible GTA engine integration to run from this folder. Installing game data does not itself add the native SA-MP engine or CEF runtime.");
+        card("PRIVACY + STORAGE", "The app uses its own Android app-specific storage. Android 15 does not allow this launcher to write into another app's private folder. Uninstalling Test launcher removes its private game-data copy.");
+    }
+
+    private void addRemoteGamePackageCard(String title, String urlKey, String hashKey, String description) {
+        LinearLayout packageCard = card(title, description);
+        EditText url = edit("Direct HTTPS ZIP download URL", prefs.getString(urlKey, ""),
+                InputType.TYPE_TEXT_VARIATION_URI);
+        EditText hash = edit("Archive SHA-256 (64 hex characters)", prefs.getString(hashKey, ""),
+                InputType.TYPE_CLASS_TEXT);
+        packageCard.addView(url);
+        gap(packageCard, 7);
+        packageCard.addView(hash);
+        Button install = compactButton("SAVE + DOWNLOAD + INSTALL", false, () -> {
+            String address = url.getText().toString().trim();
+            String checksum = hash.getText().toString().trim().toLowerCase(Locale.US);
+            if (!validHttps(address)) {
+                toast("Enter a direct HTTPS ZIP link.");
+                return;
+            }
+            if (!checksum.matches("[a-f0-9]{64}")) {
+                toast("Enter the archive's 64-character SHA-256 checksum.");
+                return;
+            }
+            prefs.edit().putString(urlKey, address).putString(hashKey, checksum).apply();
+            confirmRemoteGameInstall(title, urlKey, hashKey);
+        });
+        packageCard.addView(install, new LinearLayout.LayoutParams(-1, dp(38)));
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes < 1024L) return bytes + " B";
+        if (bytes < 1024L * 1024L) return String.format(Locale.US, "%.1f KB", bytes / 1024.0);
+        if (bytes < 1024L * 1024L * 1024L) return String.format(Locale.US, "%.2f GB", bytes / (1024.0 * 1024.0));
+        return String.format(Locale.US, "%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0));
+    }
+
+    private void chooseLocalGameZip() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                "application/zip", "application/x-zip-compressed", "application/octet-stream"
+        });
+        startActivityForResult(intent, REQUEST_GAME_ZIP);
+    }
+
+    private void confirmInstallLocalGameZip(Uri uri) {
+        new AlertDialog.Builder(this)
+                .setTitle("INSTALL LOCAL GAME DATA?")
+                .setMessage("The selected ZIP/OBB will be checked and extracted into Test launcher storage. Any current installation will be kept as a rollback backup.")
+                .setNegativeButton("CANCEL", null)
+                .setPositiveButton("INSTALL", (d, w) -> installLocalGameZip(uri))
+                .show();
+    }
+
+    private void installLocalGameZip(Uri uri) {
+        beginTask("Copying selected game-data archive…");
+        io.execute(() -> {
+            File archive = null;
+            try {
+                archive = GameResourcesManager.copyLocalZip(this, uri);
+                main.post(() -> updateTask(1, 2, "Archive copied; validating and installing…"));
+                int count = GameResourcesManager.install(this, archive, "LOCAL", 
+                        (current, total, text) -> main.post(() -> updateTask(current, total, text)));
+                main.post(() -> finishTask(true, "Installed " + count + " game resource files into Test launcher storage."));
+            } catch (Exception e) {
+                String message = e.getMessage() == null ? "Unknown import error." : e.getMessage();
+                main.post(() -> finishTask(false, "Game-data import failed: " + message));
+            } finally {
+                if (archive != null) archive.delete();
+            }
+        });
+    }
+
+    private void confirmRemoteGameInstall(String title, String urlKey, String hashKey) {
+        new AlertDialog.Builder(this)
+                .setTitle("INSTALL " + title + "?")
+                .setMessage("The archive will be downloaded over HTTPS, checked against its SHA-256 checksum, and extracted into Test launcher storage. Existing game data will be kept as a rollback backup.")
+                .setNegativeButton("CANCEL", null)
+                .setPositiveButton("DOWNLOAD + INSTALL", (d, w) -> installRemoteGamePackage(
+                        title, prefs.getString(urlKey, ""), prefs.getString(hashKey, "")))
+                .show();
+    }
+
+    private void installRemoteGamePackage(String edition, String url, String sha256) {
+        beginTask("Starting " + edition + " download…");
+        io.execute(() -> {
+            File archive = null;
+            try {
+                archive = GameResourcesManager.downloadVerified(this, url, sha256,
+                        (current, total, text) -> main.post(() -> updateTask(current, total, text)));
+                File verified = archive;
+                main.post(() -> updateTask(1, 2, "Download verified; extracting package…"));
+                int count = GameResourcesManager.install(this, verified, edition,
+                        (current, total, text) -> main.post(() -> updateTask(current, total, text)));
+                main.post(() -> finishTask(true, edition + ": installed " + count + " game resource files."));
+            } catch (Exception e) {
+                String message = e.getMessage() == null ? "Unknown download/install error." : e.getMessage();
+                main.post(() -> finishTask(false, edition + " install failed: " + message));
+            } finally {
+                if (archive != null) archive.delete();
+            }
+        });
+    }
+
+    private void confirmRestoreGameData() {
+        if (!GameResourcesManager.hasBackup(this)) {
+            toast("No previous game-data backup found.");
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("RESTORE PREVIOUS GAME DATA?")
+                .setMessage("The current game-data folder will be replaced with the previous installation.")
+                .setNegativeButton("CANCEL", null)
+                .setPositiveButton("RESTORE", (d, w) -> {
+                    beginTask("Restoring previous game data…");
+                    io.execute(() -> {
+                        try {
+                            GameResourcesManager.restoreBackup(this);
+                            main.post(() -> finishTask(true, "Previous game data restored."));
+                        } catch (Exception e) {
+                            main.post(() -> finishTask(false, "Restore failed: " + e.getMessage()));
+                        }
+                    });
+                }).show();
+    }
+
     private void renderCefs() {
         page.removeAllViews();
         heading("DOWNLOADS & CEFS", "VORTEX GAME RESOURCES AND CLIENT ADD-ONS");
@@ -1262,7 +1434,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if ((requestCode == REQUEST_CEF_FOLDER || requestCode == REQUEST_MOD_FOLDER) &&
+        if ((requestCode == REQUEST_CEF_FOLDER || requestCode == REQUEST_MOD_FOLDER || requestCode == REQUEST_GAME_ZIP) &&
                 resultCode == RESULT_OK && data != null && data.getData() != null) {
             Uri uri = data.getData();
             try {
@@ -1277,11 +1449,13 @@ public class MainActivity extends Activity {
                 prefs.edit().putString("cef_tree_uri", uri.toString()).apply();
                 toast("CEFS folder access saved.");
                 renderCefs();
-            } else {
+            } else if (requestCode == REQUEST_MOD_FOLDER) {
                 prefs.edit().putString("mods_tree_uri", uri.toString()).apply();
                 toast("Game mod folder access saved.");
                 selectedSettingsTab = "MODS";
                 renderSettings();
+            } else {
+                confirmInstallLocalGameZip(uri);
             }
         }
     }
@@ -1534,7 +1708,7 @@ public class MainActivity extends Activity {
         taskBusy = true;
         taskMessage = message;
         taskPercent = 0;
-        if (!"CEFS".equals(currentTab)) showTab("CEFS");
+        if (!"CEFS".equals(currentTab) && !"DATA".equals(currentTab)) showTab("CEFS");
         if (taskStatus != null) taskStatus.setText(taskMessage);
         if (taskProgress != null) {
             taskProgress.setIndeterminate(true);
@@ -1558,6 +1732,7 @@ public class MainActivity extends Activity {
         taskPercent = success ? 100 : 0;
         toast(taskMessage);
         if ("CEFS".equals(currentTab)) renderCefs();
+        else if ("DATA".equals(currentTab)) renderGameData();
     }
 
     private Uri parseUri(String raw) {

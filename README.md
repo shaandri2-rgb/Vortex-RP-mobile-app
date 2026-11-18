@@ -16,6 +16,7 @@ A native Android launcher project for the VORTEX RP community. App label: **Test
 - Server status querying; unknown or timed-out values are shown as unverified, never invented.
 - Persistent nickname and selected-server preferences.
 - CEFS/web-file download manager with SHA-256 validation, backup and restore.
+- Game Resources tab with local ZIP/OBB import, optional HTTPS Lite/Full package downloads, SHA-256 checks, safe extraction into Test launcher's private storage, and rollback to the previous data set.
 - Optional HTTPS announcements feed.
 - Launch adapter for an already-installed compatible Android multiplayer client. It validates installed packages and opens the real client; automatic joining depends on a documented URI supported by that client.
 
@@ -27,7 +28,7 @@ A genuinely integrated client requires the legally redistributable native client
 
 CEF is only available when the selected game client itself supplies a compatible native CEF runtime and bridge. The CEFS manager in this project manages web files; it does not install or inject a CEF engine into a third-party app.
 
-No Rockstar game assets, proprietary client binaries, credentials, or signing keys are included.
+Game data is never bundled: players must import data from a copy they are legally entitled to use or configure a trusted HTTPS archive. The installer stores resources in Test launcher's own app-specific folder; it does not gain access to another app's private data directory. No Rockstar game assets, proprietary client binaries, credentials, or signing keys are included.
 
 ## Build
 

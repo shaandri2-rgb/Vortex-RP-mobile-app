@@ -312,7 +312,7 @@ public final class GameResourcesManager {
     }
 
     private static String safePath(String raw) {
-        if (raw == null || raw.length() == 0 || raw.startsWith("/") || raw.startsWith("\\") || raw.contains("\\") || raw.contains(":") || raw.indexOf('\u0000') >= 0) {
+        if (raw == null || raw.length() == 0 || raw.startsWith("/") || raw.startsWith("\\") || raw.contains("\\") || raw.contains(":") || raw.indexOf((char) 0) >= 0) {
             throw new SecurityException("Unsafe ZIP path rejected.");
         }
         String path = raw.endsWith("/") ? raw.substring(0, raw.length() - 1) : raw;

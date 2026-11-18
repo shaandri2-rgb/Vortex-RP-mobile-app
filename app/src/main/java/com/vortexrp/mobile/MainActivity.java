@@ -1056,6 +1056,12 @@ public class MainActivity extends Activity {
             Button chooseClient = compactButton("SELECT MULTIPLAYER CLIENT", true, () -> chooseInstalledApp(false));
             client.addView(chooseClient, new LinearLayout.LayoutParams(-1, dp(38)));
 
+            LinearLayout clientDownload = card("GET AN ANDROID SA-MP CLIENT",
+                    "Install a compatible third-party SA-MP Android client, then return here and select it above. The client APK does not include GTA: San Andreas game data.");
+            Button getClient = compactButton("VIEW SA-MP ANDROID RELEASES", false,
+                    () -> openUrl("https://github.com/SA-MP-Android/App/releases"));
+            clientDownload.addView(getClient, new LinearLayout.LayoutParams(-1, dp(38)));
+
             LinearLayout server = card("DEFAULT SERVER", "The selected server is shown on the home screen.");
             server.addView(label(selectedServer() == null ? "No server selected." :
                     selectedServer().name + " • " + selectedServer().address(), 9, MUTED, false));
@@ -1366,7 +1372,7 @@ public class MainActivity extends Activity {
             if (contentType != null && contentType.toLowerCase(Locale.US).contains("text/html"))
                 throw new IllegalStateException(label + " link returned a web page, not a file. Copy the direct download link.");
             String fileName = modFileName(connection, connection.getURL(), extension);
-            File target = new File(getCacheDir(), "download-" + fileName);
+            File target = new File(getCacheDir(), fileName);
             long total = connection.getContentLengthLong();
             if (total > 512L * 1024L * 1024L)
                 throw new IllegalStateException(label + " file exceeds the 512 MB safety limit.");

@@ -1321,10 +1321,18 @@ public class MainActivity extends Activity {
         String disposition = connection.getHeaderField("Content-Disposition");
         String name = null;
         if (disposition != null) {
-            java.util.regex.Matcher m = java.util.regex.Pattern
-                    .compile("filename\*?=(?:UTF-8''|\\")?([^;\\"]+)", java.util.regex.Pattern.CASE_INSENSITIVE)
-                    .matcher(disposition);
-            if (m.find()) name = Uri.decode(m.group(1).trim().replace("\\", ""));
+            for (String part : disposition.split(";")) {
+                String lower = part.trim().toLowerCase(Locale.US);
+                if (lower.startsWith("filename*=") || lower.startsWith("filename=")) {
+                    int equals = part.indexOf('=');
+                    if (equals >= 0) {
+                        name = part.substring(equals + 1).trim().replace("\"", "");
+                        if (name.toLowerCase(Locale.US).startsWith("utf-8''"))
+                            name = name.substring(7);
+                        break;
+                    }
+                }
+            }
         }
         if (name == null || name.isEmpty()) {
             String path = url.getPath();

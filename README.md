@@ -1,50 +1,45 @@
-# VORTEX RP — Android SA-MP Launcher
+# Test launcher — Android SA-MP launcher project
 
-A native Android launcher for the VORTEX RP community, styled around the server-selection flow familiar from SA-MP mobile launchers.
+A native Android launcher project for the VORTEX RP community. App label: **Test launcher**.
 
-## Launcher interface
+## Target
 
-- Premium dark VORTEX red/purple/black design.
-- Home screen with player nickname, selected server, online status and a large PLAY ONLINE action.
-- Server browser with My Servers, Favorites and a configurable Hosted directory.
-- Server details dialog with current player count, ping, game mode and address when the UDP query is available.
-- Add server by hostname/IP and port, locally saved favorites, and persistent selected server.
-- Settings divided into General, Chat and Mods categories.
-- Downloads / CEFS manager with HTTPS package download, SHA-256 verification, per-file validation, backup and restore.
-- Optional HTTPS announcement feed.
-- Native Android 15 target (API 35), Java 17, min SDK 26.
+- Android 15 / API 35
+- ARM64 devices supported by Android (the APK is not ABI-restricted; native client libraries, if later licensed and integrated, must include `arm64-v8a`)
+- Java 17, Android Gradle Plugin 8.6.1
+- Minimum Android API 26
 
-## Functional boundaries
+## Launcher features
 
-This is an original VORTEX launcher UI and external-client adapter, not a rebranded copy of Alyn and not a full SA-MP game engine.
+- Native dark launcher interface with Home, Servers, CEFS and Settings sections.
+- Server browser with saved servers, favorites, manual IP/port entry and optional HTTPS hosted-server directory.
+- Server status querying; unknown or timed-out values are shown as unverified, never invented.
+- Persistent nickname and selected-server preferences.
+- CEFS/web-file download manager with SHA-256 validation, backup and restore.
+- Optional HTTPS announcements feed.
+- Launch adapter for an already-installed compatible Android multiplayer client. It validates installed packages and opens the real client; automatic joining depends on a documented URI supported by that client.
 
-- GTA San Andreas and a compatible Android multiplayer client must already be installed legally.
-- Play validates both packages, opens the real selected multiplayer client and copies the selected server address.
-- Automatic joining only works when the selected client has a documented direct-connect URI. No universal Android SA-MP intent is assumed.
-- The launcher cannot access another app's private game files or inject native CEF into it.
-- CEFS installation handles web files only. A client with native CEF support is required for in-game rendering.
-- Query timeouts are reported as unverified; player counts are never fabricated.
-- No proprietary GTA assets, game executables or third-party client binaries are included.
+## Important game-client limitation
 
-## Hosted directory format
+**This repository does not contain an integrated SA-MP game engine or a bundled GTA San Andreas client.** The Android launcher UI and supporting features are native, but the current Play flow hands off to a separately installed compatible client.
 
-Settings → General → Live Server + News Feeds accepts an HTTPS directory returning either a JSON array or an object with a servers array:
+A genuinely integrated client requires the legally redistributable native client source/SDK, Android build instructions, supported ABI libraries (including `arm64-v8a`), and the client developer's permission to redistribute or link it. None of those proprietary components are included here. The launcher cannot invent an undocumented SA-MP protocol API or embed another app's private game process.
 
-    {
-      "servers": [
-        {"name": "VORTEX RP", "host": "rp.example.net", "port": 7777}
-      ]
-    }
+CEF is only available when the selected game client itself supplies a compatible native CEF runtime and bridge. The CEFS manager in this project manages web files; it does not install or inject a CEF engine into a third-party app.
 
-At most 100 rows are loaded. See docs/alyn-style-flow.md and docs/cefs-package-format.md.
+No Rockstar game assets, proprietary client binaries, credentials, or signing keys are included.
 
-## Build and download
+## Build
 
-GitHub Actions builds the debug APK, verifies its signature, and publishes a release after every relevant push to main.
+Pushes to `main` and manual workflow runs build a debug APK and upload it as a GitHub Actions artifact.
 
-- Download latest APK from Releases: https://github.com/shaandri2-rgb/Vortex-RP-mobile-app/releases
-- Build workflow: https://github.com/shaandri2-rgb/Vortex-RP-mobile-app/actions
+1. Open the repository's **Actions** tab.
+2. Select **Android APK build**.
+3. Run the workflow (or wait for a push build).
+4. Download the `test-launcher-debug-apk` artifact from the completed run.
 
-The debug APK is for testing. A production release should use a private signing key stored in GitHub Actions secrets; never commit signing keys.
+The debug APK is for testing. A production APK must be signed with a private release key stored in GitHub Actions secrets. Never commit signing keys.
 
-No VORTEX server IP, hosted directory URL, news URL, CEFS URL or package checksum was supplied, so those are configured inside the app rather than guessed or hardcoded.
+## VORTEX RP configuration
+
+The server browser supports manual server entry and an optional HTTPS server directory. Configure the real VORTEX RP host/port and any hosted-directory/news/CEFS URLs in the app. No unverified server address is hardcoded.

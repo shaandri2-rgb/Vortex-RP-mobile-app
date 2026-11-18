@@ -75,9 +75,10 @@ public final class GameResourcesManager {
         File destination = new File(context.getCacheDir(), "game-resources-local.zip");
         long copied = 0;
         ContentResolver resolver = context.getContentResolver();
-        try (InputStream in = new BufferedInputStream(resolver.openInputStream(uri));
+        InputStream opened = resolver.openInputStream(uri);
+        if (opened == null) throw new IllegalStateException("Android could not open the selected file.");
+        try (InputStream in = new BufferedInputStream(opened);
              OutputStream out = new BufferedOutputStream(new FileOutputStream(destination))) {
-            if (in == null) throw new IllegalStateException("Android could not open the selected file.");
             byte[] buffer = new byte[64 * 1024];
             int n;
             while ((n = in.read(buffer)) != -1) {

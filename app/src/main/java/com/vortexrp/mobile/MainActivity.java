@@ -1025,7 +1025,7 @@ public class MainActivity extends Activity {
     private String formatBytes(long bytes) {
         if (bytes < 1024L) return bytes + " B";
         if (bytes < 1024L * 1024L) return String.format(Locale.US, "%.1f KB", bytes / 1024.0);
-        if (bytes < 1024L * 1024L * 1024L) return String.format(Locale.US, "%.2f GB", bytes / (1024.0 * 1024.0));
+        if (bytes < 1024L * 1024L * 1024L) return String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0));
         return String.format(Locale.US, "%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0));
     }
 
